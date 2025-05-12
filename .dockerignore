@@ -1,0 +1,9 @@
+.git
+.dev.env_*
+.gitignore
+.gitlab-ci.yml
+build/
+cache/img
+LICENSE
+README.md
+Taskfile.yml
