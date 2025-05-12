@@ -1,0 +1,109 @@
+include:
+  - project: '$GITLAB_CI_PATH'
+    ref: '$GITLAB_CI_REF_NAME'
+    file: '/ext/.build_docker_image.yml'
+
+variables:
+  PYTHON_VERSION: "3.9"
+  POETRY_VERSION: "1.6.1"
+  GOTASK_VERSION: "3.29.1"
+
+.rules:
+  build_image_rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api"
+    - if: $CI_OPTIMIZE_PIPELINE == "true"
+      changes:
+        - Dockerfile
+    - if: $CI_OPTIMIZE_PIPELINE == "false"
+  release_branch_rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api"
+    - if: $CI_OPTIMIZE_PIPELINE == "true"
+      changes:
+        - Dockerfile
+    - if: $CI_OPTIMIZE_PIPELINE == "false"
+
+
+prepare:
+  extends:
+    - .image_gitlab_ci
+    - .prepare_vault
+  stage: .pre
+  script:
+    - echo "Preparing environment for Vault"
+
+build_image:
+  extends:
+    - .build_image
+  stage: build
+  needs:
+    - job: prepare
+      artifacts: true
+  script:
+    - >-
+      docker build
+      --build-arg HTTP_PROXY
+      --build-arg HTTPS_PROXY
+      --build-arg NO_PROXY
+      --build-arg CI_REGISTRY=$CI_REGISTRY/$CI_REGISTRY_PATH
+      --cache-from $BRANCH_IMAGE
+      --progress plain -t $BUILD_IMAGE .
+    - docker push $BUILD_IMAGE
+  dependencies:
+    - prepare
+  rules: !reference [.rules, build_image_rules]
+
+test:
+  extends:
+    - .test
+  stage: test
+  script:
+    - pwd
+    - set -e
+    - python --version
+    - |
+      if [ $(python --version | awk 'NR==1{print $2}' | cut -d '.' -f 1,2) != $PYTHON_VERSION ]; then
+          echo Python version does not match $PYTHON_VERSION
+          exit 1
+      fi
+    - poetry --version
+    - |
+      if [ $(poetry --version | sed 's/Poetry (version //;s/)//') != $POETRY_VERSION ]; then
+          echo Poetry version does not match $POETRY_VERSION
+          exit 1
+      fi
+    - task --version
+    - |
+      if [ $(task --version | sed 's/Task version: v//;s/(.*//') != $GOTASK_VERSION ]; then
+          echo Gotask version does not match $GOTASK_VERSION
+          exit 1
+      fi
+  variables:
+    GIT_STRATEGY: none
+  rules: !reference [.rules, build_image_rules]
+
+release_branch:
+  extends:
+    - .release
+  stage: release
+  dependencies:
+    - prepare
+  rules: !reference [.rules, release_branch_rules]
+
+release_tag:
+  extends:
+    - .release_tag
+  dependencies:
+    - prepare
+  variables:
+    DELETE_RELEASE: "true"
+
+
+cleanup_build:
+  extends:
+    - .cleanup_build
+  dependencies:
+    - prepare
+  rules: !reference [.rules, build_image_rules]
