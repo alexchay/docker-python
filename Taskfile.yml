@@ -1,0 +1,77 @@
+# https://taskfile.dev
+version: "3"
+vars:
+  PYTHON_IMAGE_TAG:
+    sh: |
+      export `cat .build.env` && \
+      ref_name=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/HEAD detached at //' -e 's/* (\(.*\))/\1/' -e 's/* \(.*\)/\1/');
+      if [[ "$ref_name" == 3* ]]; then
+        echo "$ref_name";
+      else
+        echo "$PYTHON_IMAGE_TAG_DEFAULT";
+      fi
+  DOCKER_BUILD_ARGS: >-
+    --build-arg HTTP_PROXY --build-arg HTTPS_PROXY --build-arg NO_PROXY
+    --build-arg CI_REGISTRY
+  DOCKER_RUN_ARGS: >-
+    -e HTTP_PROXY -e HTTPS_PROXY -e NO_PROXY
+    -v $(pwd)/:/home/user/build/
+
+tasks:
+  build-image:
+    desc: Build docker image
+    cmds:
+      - |
+        echo "Build from base image with tag={{.PYTHON_IMAGE_TAG}}"
+        export `cat .build.env` && \
+        docker build {{.DOCKER_BUILD_ARGS}} \
+        --build-arg PYTHON_IMAGE_TAG={{.PYTHON_IMAGE_TAG}} \
+        --progress plain \
+        -t python:{{.PYTHON_IMAGE_TAG}} .
+
+  rebuild-image:
+    desc: ReBuild docker image
+    cmds:
+      - task: build-image
+        vars:
+          DOCKER_BUILD_ARGS: '{{.DOCKER_BUILD_ARGS}} --no-cache'
+
+  test-image:
+    desc: Test docker image
+    cmds:
+      - |
+        export PYTHON_VERSION=$(echo {{.PYTHON_IMAGE_TAG}}| cut -d'-' -f1 | awk 'NR==1{split($1, a, "."); print a[1]"."a[2]}')
+        docker run --rm -it {{.DOCKER_RUN_ARGS}} \
+        --env-file=.build.env -e PYTHON_VERSION \
+        python:{{.PYTHON_IMAGE_TAG}} bash \
+        -c "cd build && ./scripts/check_python_version.sh"
+
+  build-and-test:
+    desc: Build and test docker image
+    cmds:
+      - task: build-image
+      - task: test-image
+
+  dockerfile-check:
+    desc: Run static analysis tool (linter) for Dockerfile
+    cmds:
+      - >-
+          docker run --rm -it
+          -v $(pwd):/app
+          hadolint/hadolint:latest-alpine
+          sh -c 'hadolint --version && cd app && echo "Checking..." && hadolint Dockerfile && echo "Done"'
+
+  shell-check:
+    desc: Run static analysis tool (linter) for shell scripts
+    cmds:
+      - >-
+          docker run --rm -it
+          -v $(pwd):/app
+          koalaman/shellcheck-alpine:latest
+          sh -c 'shellcheck --version && cd app && echo "Checking..." && shellcheck scripts/*.sh && echo "Done"'
+
+  static-analysis:
+    desc: Run code formatter check, linting, static type analysis
+    cmds:
+      - task: shell-check
+      - task: dockerfile-check
