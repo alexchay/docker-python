@@ -7,7 +7,18 @@ LABEL maintainer="Alexander Chaykovskiy <alexchay@gmail.com>"
 ARG POETRY_VERSION=2.1.3
 ENV POETRY_VERSION=$POETRY_VERSION
 ENV GOTASK_VERSION=3.43.3
-ENV GOTASK_SHA256SUM=717cc03e60bf92fa53015a15b263c750f2452ba17f8f7b7648b2afc19ac4e969
+
+# Map Docker's TARGETARCH to GoTask's arch naming (amd64 -> amd64, arm64 -> arm64)
+ARG TARGETARCH
+ENV GOTASK_ARCH=$TARGETARCH
+
+# Set GoTask download URLs and checksums for each arch
+ENV GOTASK_URL_AMD64=https://github.com/go-task/task/releases/download/v${GOTASK_VERSION}/task_linux_amd64.deb
+ENV GOTASK_URL_ARM64=https://github.com/go-task/task/releases/download/v${GOTASK_VERSION}/task_linux_arm64.deb
+ENV GOTASK_SHA256SUM_AMD64=717cc03e60bf92fa53015a15b263c750f2452ba17f8f7b7648b2afc19ac4e969
+ENV GOTASK_SHA256SUM_ARM64=e1bf47b46ec4df932f1d68b84b243c2b67d03465f8cac01379fd2b39517aa71f
+
+USER root
 
 USER root
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -26,14 +37,24 @@ RUN \
     time \
     tree \
     unzip \
-    && curl -fsSLO https://github.com/go-task/task/releases/download/v${GOTASK_VERSION}/task_linux_amd64.deb \
-    && echo "${GOTASK_SHA256SUM} task_linux_amd64.deb" | sha256sum --check \
-    && dpkg -i task_linux_amd64.deb && rm task_linux_amd64.deb \
+    && \
+    # Select GoTask URL and checksum based on architecture
+    if [ "$GOTASK_ARCH" = "amd64" ]; then \
+      GOTASK_URL=$GOTASK_URL_AMD64; \
+      GOTASK_SHA256SUM=$GOTASK_SHA256SUM_AMD64; \
+    elif [ "$GOTASK_ARCH" = "arm64" ]; then \
+      GOTASK_URL=$GOTASK_URL_ARM64; \
+      GOTASK_SHA256SUM=$GOTASK_SHA256SUM_ARM64; \
+    else \
+      echo "Unsupported architecture: $GOTASK_ARCH"; exit 1; \
+    fi \
+    && curl -fsSLO "$GOTASK_URL" \
+    && echo "${GOTASK_SHA256SUM}  $(basename $GOTASK_URL)" | sha256sum --check \
+    && dpkg -i $(basename $GOTASK_URL) && rm $(basename $GOTASK_URL) \
     && apt-get -y autoremove \
     && rm -rf /tmp/* /var/lib/apt/lists/* \
     && rm -Rf /usr/share/doc && rm -Rf /usr/share/man \
     && apt-get clean
-
 
 
 # hadolint ignore=SC2086
