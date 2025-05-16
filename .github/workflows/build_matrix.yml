@@ -1,0 +1,36 @@
+name: Build Matrix
+description: Build and push Docker images to Docker Hub using a build matrix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix_json }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fabasoad/data-format-converter-action@v1
+        id: convert_matrix
+        with:
+          source-pattern: ".github/matrix.yml"
+          to: "json"
+      - name: Set matrix
+        id: matrix
+        run: |
+          echo "matrix_json=$(jq -c . < ${{ steps.convert_matrix.outputs.result-path }}/matrix.json)" >> $GITHUB_OUTPUT
+
+  build_image:
+    needs: prepare-matrix
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    permissions:
+      contents: read
+      packages: write
+    uses: alexchay/github-ci/.github/workflows/build_image.yml@main
+    with:
+      from_image_name: ${{ matrix.from_image_name }}
+      from_image_tag: ${{ matrix.from_image_tag }}
+      image_name: ${{ matrix.image_name }}
+      image_tag: ${{ matrix.image_tag }}
