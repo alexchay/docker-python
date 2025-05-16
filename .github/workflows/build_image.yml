@@ -1,54 +1,58 @@
-name: build_image
+name: Build Image
 description: Build and push Docker image to Docker Hub
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - '*'
+  workflow_dispatch:
+    inputs:
+      from_image_tag:
+        description: "Base image tag to use for the build (e.g., 3.12.2-slim)"
+        required: false
+      image_tag:
+        description: "Image tag to use for the build (e.g., 3.12)"
+        required: false
+
 
 jobs:
-  build_image:
+  process_image_tags:
     runs-on: ubuntu-latest
+
+    outputs:
+      from_image_name: ${{ steps.process_tags.outputs.FROM_IMAGE_NAME }}
+      from_image_tag: ${{ steps.process_tags.outputs.FROM_IMAGE_TAG }}
+      image_name: ${{ steps.process_tags.outputs.IMAGE_NAME }}
+      image_tag: ${{ steps.process_tags.outputs.IMAGE_TAG }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Process image tags
+        id: process_tags
+        run: |
+
+          # Check if the base image tag is provided from workflow_dispatch user's input
+          FROM_IMAGE_TAG=$(if [ -n "${{ inputs.from_image_tag }}" ]; then echo ${{ inputs.from_image_tag }}; else echo $(./scripts/bash_helpers.sh get_image_tag); fi)
+          echo "FROM_IMAGE_TAG=$FROM_IMAGE_TAG" >> $GITHUB_OUTPUT
+
+          # Check if the image tag is provided from workflow_dispatch user's input
+          IMAGE_TAG=$(if [ -n "${{ inputs.image_tag }}" ]; then echo ${{ inputs.image_tag }}; else echo $FROM_IMAGE_TAG; fi)
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+          # This file should contain the environment variables used in the Dockerfile and the build process.
+          export `cat .github/.build.env` && \
+          echo "FROM_IMAGE_NAME=$FROM_IMAGE_NAME" >> $GITHUB_OUTPUT && \
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
+
+
+  build_image:
     permissions:
       contents: read
       packages: write
-
-    steps:
-      - uses: actions/checkout@v4
-      - run: docker version
-
-      - name: Set dynamic variable
-        run: |
-          export `cat .build.env` && \
-          ref_name=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/HEAD detached at //' -e 's/* (\(.*\))/\1/' -e 's/* \(.*\)/\1/');
-          if [[ "$ref_name" == 3* ]]; then
-            PYTHON_IMAGE_TAG=$ref_name;
-          else
-            PYTHON_IMAGE_TAG=$PYTHON_IMAGE_TAG_DEFAULT;
-          fi
-          echo "PYTHON_IMAGE_TAG=$PYTHON_IMAGE_TAG" >> $GITHUB_ENV
-          PYTHON_VERSION=$(echo $PYTHON_IMAGE_TAG | cut -d'-' -f1 | awk 'NR==1{split($1, a, "."); print a[1]"."a[2]}')
-          echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
-
-      - name: Build Docker image
-        run: |
-          echo "Build from base image with tag=$PYTHON_IMAGE_TAG"
-          export `cat .build.env` && \
-          docker build \
-          --build-arg PYTHON_IMAGE_TAG=$PYTHON_IMAGE_TAG \
-          --build-arg CI_REGISTRY=ghcr.io/${{ github.repository_owner }} \
-          --progress plain \
-          -t ghcr.io/${{ github.repository_owner }}/python:${PYTHON_IMAGE_TAG} .
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push Docker image
-        run: |
-          docker push ghcr.io/${{ github.repository_owner }}/python:${PYTHON_IMAGE_TAG}
-
+    needs: process_image_tags
+    uses: alexchay/github-ci/.github/workflows/build_image.yml@main
+    with:
+      from_image_name: ${{ needs.process_image_tags.outputs.from_image_name }}
+      from_image_tag: ${{ needs.process_image_tags.outputs.from_image_tag }}
+      image_name: ${{ needs.process_image_tags.outputs.image_name }}
+      image_tag: ${{ needs.process_image_tags.outputs.image_tag }}

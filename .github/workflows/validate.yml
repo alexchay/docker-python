@@ -1,4 +1,4 @@
-name: validate
+name: Validate
 description: Validate Dockerfile and shell scripts
 
 on:
