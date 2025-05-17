@@ -2,17 +2,16 @@ name: Image Build
 description: Build and push Docker image to GitHub Container Registry
 
 on:
-  push:
-    tags:
-      - '*'
   workflow_dispatch:
     inputs:
       from_image_tag:
         description: "Base image tag to use for the build (e.g., 3.12.2-slim)"
-        required: false
+        required: true
+        type: string
       image_tag:
         description: "Image tag to use for the build (e.g., 3.12)"
-        required: false
+        required: true
+        type: string
 
 concurrency:
   group: "${{ github.repository_id }}"
@@ -34,13 +33,8 @@ jobs:
         id: setup
         run: |
 
-          # Check if the base image tag is provided from workflow_dispatch user's input
-          FROM_IMAGE_TAG=$(if [ -n "${{ inputs.from_image_tag }}" ]; then echo ${{ inputs.from_image_tag }}; else echo $(./scripts/bash_helpers.sh get_image_tag); fi)
-          echo "FROM_IMAGE_TAG=$FROM_IMAGE_TAG" >> $GITHUB_OUTPUT
-
-          # Check if the image tag is provided from workflow_dispatch user's input
-          IMAGE_TAG=$(if [ -n "${{ inputs.image_tag }}" ]; then echo ${{ inputs.image_tag }}; else echo $FROM_IMAGE_TAG; fi)
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "FROM_IMAGE_TAG=${{ inputs.from_image_tag }}" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
 
           # This file 'build.env' should contain the environment variables used in the Dockerfile and the build process.
           set -a; source .github/.build.env; set +a;
