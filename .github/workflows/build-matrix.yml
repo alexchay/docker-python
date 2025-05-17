@@ -1,11 +1,15 @@
-name: Build Matrix
-description: Build and push Docker images to Docker Hub using a build matrix
+name: Matrix Build
+description: Build and push Docker images using a build matrix
 
 on:
   workflow_dispatch:
 
+concurrency:
+  group: "${{ github.repository_id }}"
+
 jobs:
   prepare-matrix:
+    name: Prepare Matrix
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix_json }}
@@ -21,14 +25,19 @@ jobs:
         run: |
           echo "matrix_json=$(jq -c . < ${{ steps.convert_matrix.outputs.result-path }}/matrix.json)" >> $GITHUB_OUTPUT
 
-  build_image:
+  build:
+    name: 'Build ${{ matrix.image_name }}:${{ matrix.image_tag }}'
     needs: prepare-matrix
     strategy:
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+      fail-fast: false
+      # set limit to 2 parallel jobs due to concurency allows only 1 running job and 1 pending job
+      # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
+      max-parallel: 2
     permissions:
       contents: read
       packages: write
-    uses: alexchay/github-ci/.github/workflows/build_image.yml@main
+    uses: alexchay/github-ci/.github/workflows/build_and_push_image_to_ghcr.yml@main
     with:
       from_image_name: ${{ matrix.from_image_name }}
       from_image_tag: ${{ matrix.from_image_tag }}
