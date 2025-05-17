@@ -3,6 +3,10 @@ description: Build and push Docker images using a build matrix
 
 on:
   workflow_dispatch:
+  release:
+    types:
+      - published
+
 
 concurrency:
   group: "${{ github.repository_id }}"
@@ -42,4 +46,4 @@ jobs:
       from_image_name: ${{ matrix.from_image_name }}
       from_image_tag: ${{ matrix.from_image_tag }}
       image_name: ${{ matrix.image_name }}
-      image_tag: ${{ matrix.image_tag }}
+      image_tag: ${{ matrix.image_tag }}_${{ github.ref_name}}
