@@ -1,6 +1,9 @@
 # https://taskfile.dev
 version: "3"
+
 vars:
+  PYTHON: python3
+  SET_VENV: poetry run
   FROM_IMAGE_NAME: local/python-base
   FROM_IMAGE_TAG:
     sh: |
@@ -14,7 +17,21 @@ vars:
     -e HTTP_PROXY -e HTTPS_PROXY -e NO_PROXY
     -v $(pwd)/:/home/user/build/
 
+includes:
+  poetry:
+    taskfile: ./taskfiles/poetry.yml
+
 tasks:
+  default:
+    cmds:
+      - task: poetry:env-info
+    silent: true
+
+  bash_version:
+    desc: Check bash version
+    cmds:
+      - bash --version
+
   build-image:
     desc: Build docker image
     cmds:
@@ -72,7 +89,28 @@ tasks:
       - task: shell-check
       - task: dockerfile-check
 
+  install:
+    desc: Install required dependencies
+    cmds:
+      - poetry install --only main --no-root
+
+  clean:
+    desc: Clean up the installed dependencies
+    cmds:
+      - rm -rf .venv
+
+  reinstall:
+    desc: Clean up and reinstall required dependencies
+    cmds:
+      - task: clean
+      - task: install
+
+  update:
+    desc: Update dependencies
+    cmds:
+      - poetry update
+
   bump-calver:
     desc: Bump Cal version
     cmds:
-      - ./bump_calver_build.sh
+      - poetry run ./bump_calver_build.sh
