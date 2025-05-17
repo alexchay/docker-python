@@ -71,3 +71,8 @@ tasks:
     cmds:
       - task: shell-check
       - task: dockerfile-check
+
+  bump-calver:
+    desc: Bump Cal version
+    cmds:
+      - ./bump_calver_build.sh
