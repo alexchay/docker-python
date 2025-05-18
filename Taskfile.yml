@@ -55,7 +55,7 @@ tasks:
     cmds:
       - |
         docker run --rm -it {{.DOCKER_RUN_ARGS}} \
-        -e IMAGE_TAG={{.IMAGE_TAG}} \
+        -e IMAGE_TAGS={{.IMAGE_TAG}} \
         local/{{.IMAGE_NAME}}:{{.IMAGE_TAG}} bash \
         -c "cd build && ./scripts/test.sh"
 
