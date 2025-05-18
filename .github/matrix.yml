@@ -8,3 +8,7 @@ include:
     from_image_tag: "3.11-slim"
     image_name: "python"
     image_tags: "3.11-slim, 3.11"
+  - from_image_name: "ghcr.io/alexchay/python-base"
+    from_image_tag: "3.12-slim"
+    image_name: "python"
+    image_tags: "3.12-slim, 3.12"

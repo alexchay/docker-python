@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DEFAULT_IMAGE_TAG=3.9-slim
+DEFAULT_IMAGE_TAG=3.10-slim
 
 # Extract ref name from git current branch/tag
 function extract_ref_name {
