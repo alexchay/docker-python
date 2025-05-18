@@ -30,7 +30,7 @@ jobs:
           echo "matrix_json=$(jq -c . < ${{ steps.convert_matrix.outputs.result-path }}/matrix.json)" >> $GITHUB_OUTPUT
 
   build:
-    name: 'Build ${{ matrix.image_name }}:${{ matrix.image_tag }}'
+    name: 'Build ${{ matrix.image_name }}:${{ matrix.image_tags }}'
     needs: prepare-matrix
     strategy:
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
@@ -46,6 +46,5 @@ jobs:
       from_image_name: ${{ matrix.from_image_name }}
       from_image_tag: ${{ matrix.from_image_tag }}
       image_name: ${{ matrix.image_name }}
-      image_tags: >
-        ${{ matrix.image_tag }},
-        ${{ matrix.image_tag }}_${{ github.ref_name }}
+      image_tags: >-
+        ${{ matrix.image_tag }}${{ github.event_name == 'release' && format(',{0}_{1}', matrix.image_tag, github.ref_name) || '' }}
