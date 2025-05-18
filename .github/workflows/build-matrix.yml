@@ -47,4 +47,4 @@ jobs:
       from_image_tag: ${{ matrix.from_image_tag }}
       image_name: ${{ matrix.image_name }}
       image_tags: >-
-        ${{ matrix.image_tag }}${{ github.event_name == 'release' && format(',{0}_{1}', matrix.image_tag, github.ref_name) || '' }}
+        ${{ matrix.image_tags }}${{ github.event_name == 'release' && format(',{0}_{1}', matrix.image_tags, github.ref_name) || '' }}
