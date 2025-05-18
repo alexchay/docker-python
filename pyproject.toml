@@ -2,7 +2,7 @@
 
 [tool.poetry]
 name = "docker-python"
-version = "2025.05.17.0"
+version = "2025.05.18.0"
 description = ""
 readme = "README.md"
 authors = ["Alexander Chaykovskiy <alexchay@gmail.com>"]
