@@ -8,8 +8,8 @@ on:
         description: "Base image tag to use for the build (e.g., 3.12.2-slim)"
         required: true
         type: string
-      image_tag:
-        description: "Image tag to use for the build (e.g., 3.12)"
+      image_tags:
+        description: "Comma-separated list of tags to apply to the image (e.g., latest, 3.12.2-slim)"
         required: true
         type: string
 
@@ -25,7 +25,7 @@ jobs:
       from_image_name: ${{ steps.setup.outputs.FROM_IMAGE_NAME }}
       from_image_tag: ${{ steps.setup.outputs.FROM_IMAGE_TAG }}
       image_name: ${{ steps.setup.outputs.IMAGE_NAME }}
-      image_tag: ${{ steps.setup.outputs.IMAGE_TAG }}
+      image_tags: ${{ steps.setup.outputs.IMAGE_TAGS }}
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +34,7 @@ jobs:
         run: |
 
           echo "FROM_IMAGE_TAG=${{ inputs.from_image_tag }}" >> $GITHUB_OUTPUT
-          echo "IMAGE_TAG=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAGS=${{ inputs.image_tags }}" >> $GITHUB_OUTPUT
 
           # This file 'build.env' should contain the environment variables used in the Dockerfile and the build process.
           set -a; source .github/.build.env; set +a;
@@ -43,7 +43,7 @@ jobs:
 
 
   build:
-    name: 'Build ${{ needs.setup_build_env.outputs.image_name }}:${{ needs.setup_build_env.outputs.image_tag }}'
+    name: 'Build ${{ needs.setup_build_env.outputs.image_name }}:${{ needs.setup_build_env.outputs.image_tags }}'
     permissions:
       contents: read
       packages: write
@@ -53,4 +53,4 @@ jobs:
       from_image_name: ${{ needs.setup_build_env.outputs.from_image_name }}
       from_image_tag: ${{ needs.setup_build_env.outputs.from_image_tag }}
       image_name: ${{ needs.setup_build_env.outputs.image_name }}
-      image_tag: ${{ needs.setup_build_env.outputs.image_tag }}
+      image_tags: ${{ needs.setup_build_env.outputs.image_tags }}

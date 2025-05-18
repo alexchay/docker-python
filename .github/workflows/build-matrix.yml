@@ -46,4 +46,6 @@ jobs:
       from_image_name: ${{ matrix.from_image_name }}
       from_image_tag: ${{ matrix.from_image_tag }}
       image_name: ${{ matrix.image_name }}
-      image_tag: ${{ matrix.image_tag }}_${{ github.ref_name}}
+      image_tags: >
+        ${{ matrix.image_tag }},
+        ${{ matrix.image_tag }}_${{ github.ref_name }}
