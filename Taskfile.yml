@@ -4,12 +4,12 @@ version: "3"
 vars:
   PYTHON: python3
   SET_VENV: poetry run
-  FROM_IMAGE_NAME: local/python-base
-  FROM_IMAGE_TAG:
+  BASE_IMAGE_NAME: local/python-base
+  BASE_IMAGE_TAG:
     sh: |
        echo $(./scripts/bash_helpers.sh get_image_tag)
   IMAGE_NAME: python
-  IMAGE_TAG: '{{.FROM_IMAGE_TAG}}'
+  IMAGE_TAG: '{{.BASE_IMAGE_TAG}}'
   DOCKER_BUILD_ARGS: >-
     --build-arg HTTP_PROXY --build-arg HTTPS_PROXY --build-arg NO_PROXY
     --build-arg CI_REGISTRY
@@ -36,10 +36,10 @@ tasks:
     desc: Build docker image
     cmds:
       - |
-        echo "Build from base image {{.FROM_IMAGE_NAME}}:{{.FROM_IMAGE_TAG}}"
+        echo "Build from base image {{.BASE_IMAGE_NAME}}:{{.BASE_IMAGE_TAG}}"
         docker build {{.DOCKER_BUILD_ARGS}} \
-        --build-arg FROM_IMAGE_NAME={{.FROM_IMAGE_NAME}} \
-        --build-arg FROM_IMAGE_TAG={{.FROM_IMAGE_TAG}} \
+        --build-arg BASE_IMAGE_NAME={{.BASE_IMAGE_NAME}} \
+        --build-arg BASE_IMAGE_TAG={{.BASE_IMAGE_TAG}} \
         --progress plain \
         -t local/{{.IMAGE_NAME}}:{{.IMAGE_TAG}} .
 

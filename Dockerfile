@@ -1,6 +1,6 @@
-ARG FROM_IMAGE_NAME="defval"
-ARG FROM_IMAGE_TAG="defval"
-FROM ${FROM_IMAGE_NAME}:${FROM_IMAGE_TAG}
+ARG BASE_IMAGE_NAME="defval"
+ARG BASE_IMAGE_TAG="defval"
+FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
 LABEL maintainer="Alexander Chaykovskiy <alexchay@gmail.com>"
 
@@ -17,8 +17,6 @@ ENV GOTASK_URL_AMD64=https://github.com/go-task/task/releases/download/v${GOTASK
 ENV GOTASK_URL_ARM64=https://github.com/go-task/task/releases/download/v${GOTASK_VERSION}/task_linux_arm64.deb
 ENV GOTASK_SHA256SUM_AMD64=717cc03e60bf92fa53015a15b263c750f2452ba17f8f7b7648b2afc19ac4e969
 ENV GOTASK_SHA256SUM_ARM64=e1bf47b46ec4df932f1d68b84b243c2b67d03465f8cac01379fd2b39517aa71f
-
-USER root
 
 USER root
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]

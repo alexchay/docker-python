@@ -4,7 +4,7 @@ description: Build and push Docker image to GitHub Container Registry
 on:
   workflow_dispatch:
     inputs:
-      from_image_tag:
+      base_image_tag:
         description: "Base image tag to use for the build (e.g., 3.12.2-slim)"
         required: true
         type: string
@@ -22,8 +22,8 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      from_image_name: ${{ steps.setup.outputs.FROM_IMAGE_NAME }}
-      from_image_tag: ${{ steps.setup.outputs.FROM_IMAGE_TAG }}
+      base_image_name: ${{ steps.setup.outputs.BASE_IMAGE_NAME }}
+      base_image_tag: ${{ steps.setup.outputs.BASE_IMAGE_TAG }}
       image_name: ${{ steps.setup.outputs.IMAGE_NAME }}
       image_tags: ${{ steps.setup.outputs.IMAGE_TAGS }}
     steps:
@@ -33,12 +33,12 @@ jobs:
         id: setup
         run: |
 
-          echo "FROM_IMAGE_TAG=${{ inputs.from_image_tag }}" >> $GITHUB_OUTPUT
+          echo "BASE_IMAGE_TAG=${{ inputs.base_image_tag }}" >> $GITHUB_OUTPUT
           echo "IMAGE_TAGS=${{ inputs.image_tags }}" >> $GITHUB_OUTPUT
 
           # This file 'build.env' should contain the environment variables used in the Dockerfile and the build process.
           set -a; source .github/.build.env; set +a;
-          echo "FROM_IMAGE_NAME=$FROM_IMAGE_NAME" >> $GITHUB_OUTPUT
+          echo "BASE_IMAGE_NAME=$BASE_IMAGE_NAME" >> $GITHUB_OUTPUT
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
 
 
@@ -50,7 +50,7 @@ jobs:
     needs: setup_build_env
     uses: alexchay/github-ci/.github/workflows/build_and_push_image_to_ghcr.yml@main
     with:
-      from_image_name: ${{ needs.setup_build_env.outputs.from_image_name }}
-      from_image_tag: ${{ needs.setup_build_env.outputs.from_image_tag }}
+      base_image_name: ${{ needs.setup_build_env.outputs.base_image_name }}
+      base_image_tag: ${{ needs.setup_build_env.outputs.base_image_tag }}
       image_name: ${{ needs.setup_build_env.outputs.image_name }}
       image_tags: ${{ needs.setup_build_env.outputs.image_tags }}
