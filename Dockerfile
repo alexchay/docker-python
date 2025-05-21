@@ -4,8 +4,6 @@ FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
 LABEL maintainer="Alexander Chaykovskiy <alexchay@gmail.com>"
 
-ARG POETRY_VERSION=2.1.3
-ENV POETRY_VERSION=$POETRY_VERSION
 ENV GOTASK_VERSION=3.43.3
 
 # Map Docker's TARGETARCH to GoTask's arch naming (amd64 -> amd64, arm64 -> arm64)
@@ -23,18 +21,15 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install dependencies and GoTask
 # hadolint ignore=SC2086
 RUN \
-    apt-get update && apt-get install -y --no-install-recommends \
+    apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
-    git \
     jq \
     openssh-client \
-    openssl \
     patch \
     sshpass \
     sudo \
     time \
     tree \
-    unzip \
     && \
     # Select GoTask URL and checksum based on architecture
     if [ "$GOTASK_ARCH" = "amd64" ]; then \
@@ -52,27 +47,17 @@ RUN \
     && apt-get -y autoremove \
     && rm -rf /tmp/* /var/lib/apt/lists/* \
     && rm -Rf /usr/share/doc && rm -Rf /usr/share/man \
-    && apt-get clean
+    && apt-get -y clean
 
 
 # hadolint ignore=SC2086
 RUN \
-    chown -R :$USERNAME /etc/ssh  \
+    chown -R :$GROUPNAME /etc/ssh  \
     && chmod -R g+rwx /etc/ssh \
     && echo "$USERNAME ALL=(ALL) NOPASSWD: /usr/bin/tee" > /etc/sudoers.d/$USERNAME
 
 USER $USERNAME
 WORKDIR $HOME
 
-# Install Poetry
-# https://python-poetry.org/docs/#ci-recommendations
-RUN \
-    pip install --user --upgrade --no-cache-dir \
-    poetry==$POETRY_VERSION
-
-ENV \
-    # Do not ask any interactive question
-    POETRY_NO_INTERACTION=1
-
 # default command: display Poetry version
-CMD [ "poetry", "--version" ]
+CMD [ "python", "--version" ]
