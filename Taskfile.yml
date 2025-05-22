@@ -20,6 +20,8 @@ vars:
 includes:
   uv:
     taskfile: ./taskfiles/uv.yml
+  b2v:
+    taskfile: ./taskfiles/b2v.yml
 
 tasks:
 
@@ -104,4 +106,14 @@ tasks:
   bump-calver:
     desc: Bump Cal version
     cmds:
-      - ./bump_calver_build.sh
+      - task: bump-calver-patch
+
+  bump-calver-patch:
+    desc: Bump Cal version
+    cmds:
+      - uvx bump-my-version bump --verbose patch
+
+  bump-calver-release:
+    desc: Bump Cal version
+    cmds:
+      - uvx bump-my-version bump --verbose release
