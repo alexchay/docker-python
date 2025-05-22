@@ -3,15 +3,16 @@
 
 ## Python Docker Image
 
-This repository contains the source for building container image for development and testing of Python applications.
+This repository contains the source for building a Docker image for development and testing of Python applications.
 
 [![Dockerfile](https://github.com/alexchay/docker-python/actions/workflows/dockerfile-check.yml/badge.svg)](https://github.com/alexchay/docker-python/actions/workflows/dockerfile-check.yml) [![Shell scripts](https://github.com/alexchay/docker-python/actions/workflows/shellscripts-check.yml/badge.svg)](https://github.com/alexchay/docker-python/actions/workflows/shellscripts-check.yml) [![Matrix Build](https://github.com/alexchay/docker-python/actions/workflows/build-matrix.yml/badge.svg)](https://github.com/alexchay/docker-python/actions/workflows/build-matrix.yml)
 
 #### Features
 
-- Includes common Python development tools and libraries
-- Python environment managed with Docker.
-- Pre-configured for development and testing.
+- Installs common development tools and libraries
+- Multi-architecture support: `linux/amd64` and `linux/arm64`
+- Automated builds and matrix builds for multiple Python versions
+- Pre-configured for easy extension and customization
 
 #### Prerequisites
 
@@ -20,7 +21,7 @@ This repository contains the source for building container image for development
 
 ### Build
 
-Automated builds are setup for the repository and the matrix of base images and python versions are listed in the `matrix.yml` file.
+Automated builds are configured via GitHub Actions. The build matrix is defined in [`.github/matrix.yml`](.github/matrix.yml), specifying Python versions and tags.
 The image is tagged with the python backend/version and a matching `python` version, e.g.:
 
 - ghcr.io/alexchay/python:3.11-slim
@@ -28,12 +29,14 @@ The image is tagged with the python backend/version and a matching `python` vers
 
 Images are built for `linux/amd64` and `linux/arm64` architectures.
 
-You can build the images locally using the `task` command:
+To build the images locally:
 
 ```sh
 git checkout 3.10-slim
 task build-image
 ```
+
+This will build the image using the appropriate base and tag.
 
 ### Usage
 
@@ -44,9 +47,17 @@ To run a container using the built image, use the following command:
 docker run -it --rm python:3.9-slim
 ```
 
-## Customization
+#### Customization
 
-You can customize the Docker image by modifying the `Dockerfile` and adding any additional dependencies or configurations needed for your project.
+To customize the Docker image:
+
+- Edit the `Dockerfile` to add or remove dependencies and tools.
+- Modify [`.github/matrix.yml`](.github/matrix.yml) to adjust the build matrix.
+- Use `Taskfile.yml` to automate common tasks (build, lint, test, etc.).
+
+#### Versioning
+
+This project uses CalVer (calendar versioning) managed by [bump-my-version](https://github.com/callowayproject/bump-my-version). See [pyproject.toml](pyproject.toml) for configuration.
 
 ## License
 
