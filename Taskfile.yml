@@ -18,19 +18,10 @@ vars:
     -v $(pwd)/:/home/user/build/
 
 includes:
-  poetry:
-    taskfile: ./taskfiles/poetry.yml
+  uv:
+    taskfile: ./taskfiles/uv.yml
 
 tasks:
-  default:
-    cmds:
-      - task: poetry:env-info
-    silent: true
-
-  bash_version:
-    desc: Check bash version
-    cmds:
-      - bash --version
 
   build-image:
     desc: Build docker image
@@ -92,7 +83,7 @@ tasks:
   install:
     desc: Install required dependencies
     cmds:
-      - poetry install --only main --no-root
+      - uv sync --no-default-groups --no-install-project
 
   clean:
     desc: Clean up the installed dependencies
@@ -108,9 +99,9 @@ tasks:
   update:
     desc: Update dependencies
     cmds:
-      - poetry update
+      - uv sync
 
   bump-calver:
     desc: Bump Cal version
     cmds:
-      - poetry run ./bump_calver_build.sh
+      - ./bump_calver_build.sh

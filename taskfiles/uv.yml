@@ -1,0 +1,38 @@
+# https://taskfile.dev
+version: "3"
+
+tasks:
+
+  version:
+    desc: Check uv version
+    cmds:
+      - uv self version
+
+  env-info:
+    desc: Show poetry environment info
+    cmds:
+      - poetry env info
+
+  bin-install:
+    desc: Install poetry
+    cmds:
+      - curl -LsSf https://astral.sh/uv/install.sh | sh
+      - task: version
+
+  bin-remove:
+    desc: Remove poetry
+    cmds:
+      - |
+          # Clean up stored data
+          uv cache clean
+          rm -r "$(uv python dir)"
+          rm -r "$(uv tool dir)"
+          # Remove the uv and uvx binaries
+          rm ~/.local/bin/uv ~/.local/bin/uvx
+
+  bin-update:
+    desc: Update poetry
+    cmds:
+      - task: version
+      - uv self update
+      - task: version
