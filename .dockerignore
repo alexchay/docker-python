@@ -22,6 +22,4 @@ README.md
 Taskfile.yml
 .hadolint.yaml
 .shellcheckrc
-.bumpversion.cfg
-bump_calver_build.sh
 commitlint.config.js

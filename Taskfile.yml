@@ -3,7 +3,6 @@ version: "3"
 
 vars:
   PYTHON: python3
-  SET_VENV: poetry run
   BASE_IMAGE_NAME: local/python-base
   BASE_IMAGE_TAG:
     sh: |

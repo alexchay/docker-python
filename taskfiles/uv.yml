@@ -8,19 +8,14 @@ tasks:
     cmds:
       - uv self version
 
-  env-info:
-    desc: Show poetry environment info
-    cmds:
-      - poetry env info
-
   bin-install:
-    desc: Install poetry
+    desc: Install UV
     cmds:
       - curl -LsSf https://astral.sh/uv/install.sh | sh
       - task: version
 
   bin-remove:
-    desc: Remove poetry
+    desc: Remove UV
     cmds:
       - |
           # Clean up stored data
@@ -31,7 +26,7 @@ tasks:
           rm ~/.local/bin/uv ~/.local/bin/uvx
 
   bin-update:
-    desc: Update poetry
+    desc: Update UV
     cmds:
       - task: version
       - uv self update

@@ -59,5 +59,5 @@ RUN \
 USER $USERNAME
 WORKDIR $HOME
 
-# default command: display Poetry version
+# default command: display Python version
 CMD [ "python", "--version" ]
