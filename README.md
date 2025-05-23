@@ -32,7 +32,7 @@ Images are built for `linux/amd64` and `linux/arm64` architectures.
 To build the images locally:
 
 ```sh
-git checkout 3.10-slim
+git checkout -b 3.10-slim
 task build-image
 ```
 

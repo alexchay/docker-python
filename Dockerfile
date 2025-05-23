@@ -21,6 +21,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install dependencies and GoTask
 # hadolint ignore=SC2086
 RUN \
+  --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
     jq \
@@ -44,10 +46,8 @@ RUN \
     && curl -fsSLO "$GOTASK_URL" \
     && echo "${GOTASK_SHA256SUM}  $(basename $GOTASK_URL)" | sha256sum --check \
     && dpkg -i $(basename $GOTASK_URL) && rm $(basename $GOTASK_URL) \
-    && apt-get -y autoremove \
-    && rm -rf /tmp/* /var/lib/apt/lists/* \
-    && rm -Rf /usr/share/doc && rm -Rf /usr/share/man \
-    && apt-get -y clean
+    rm -rf /tmp/* \
+    && rm -Rf /usr/share/doc && rm -Rf /usr/share/man
 
 
 # hadolint ignore=SC2086

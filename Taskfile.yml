@@ -3,6 +3,7 @@ version: "3"
 
 vars:
   PYTHON: python3
+  DOCKER_BUILDKIT: 1
   BASE_IMAGE_NAME: local/python-base
   BASE_IMAGE_TAG:
     sh: |
@@ -29,7 +30,8 @@ tasks:
     cmds:
       - |
         echo "Build from base image {{.BASE_IMAGE_NAME}}:{{.BASE_IMAGE_TAG}}"
-        docker build {{.DOCKER_BUILD_ARGS}} \
+        export DOCKER_BUILDKIT={{.DOCKER_BUILDKIT}}
+        docker buildx build {{.DOCKER_BUILD_ARGS}} \
         --build-arg BASE_IMAGE_NAME={{.BASE_IMAGE_NAME}} \
         --build-arg BASE_IMAGE_TAG={{.BASE_IMAGE_TAG}} \
         --progress plain \
