@@ -14,7 +14,7 @@ vars:
     --build-arg CI_REGISTRY
   DOCKER_RUN_ARGS: >-
     -e HTTP_PROXY -e HTTPS_PROXY -e NO_PROXY
-    -v $(pwd)/:/home/user/build/
+    -v $(pwd)/:/build/
 
 includes:
   uv:
@@ -49,7 +49,7 @@ tasks:
         docker run --rm -it {{.DOCKER_RUN_ARGS}} \
         -e IMAGE_TAGS={{.IMAGE_TAG}} \
         local/{{.IMAGE_NAME}}:{{.IMAGE_TAG}} bash \
-        -c "cd build && ./scripts/test.sh"
+        -c "cd /build && ./scripts/test.sh"
 
   build-and-test:
     desc: Build and test docker image
