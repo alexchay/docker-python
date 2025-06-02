@@ -51,10 +51,12 @@ RUN \
 
 
 # hadolint ignore=SC2086
-RUN \
-    chown -R :$GROUPNAME /etc/ssh  \
-    && chmod -R g+rwx /etc/ssh \
-    && echo "$USERNAME ALL=(ALL) NOPASSWD: /usr/bin/tee" > /etc/sudoers.d/$USERNAME
+RUN <<EOT
+    set -ex
+    chown -R :$GROUPNAME /etc/ssh
+    chmod -R g+rwx /etc/ssh
+    echo "$USERNAME ALL=(ALL) NOPASSWD: /usr/bin/tee" > /etc/sudoers.d/$USERNAME
+EOT
 
 USER $USERNAME
 WORKDIR $HOME
