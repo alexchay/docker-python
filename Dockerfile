@@ -8,7 +8,7 @@ ENV GOTASK_VERSION=3.43.3
 
 # Map Docker's TARGETARCH to GoTask's arch naming (amd64 -> amd64, arm64 -> arm64)
 ARG TARGETARCH
-ENV GOTASK_ARCH=$TARGETARCH
+ENV TARGETARCH=$TARGETARCH
 
 # Set GoTask download URLs and checksums for each arch
 ENV GOTASK_URL_AMD64=https://github.com/go-task/task/releases/download/v${GOTASK_VERSION}/task_linux_amd64.deb
@@ -32,16 +32,17 @@ RUN \
     sudo \
     time \
     tree \
+    unzip \
     && \
     # Select GoTask URL and checksum based on architecture
-    if [ "$GOTASK_ARCH" = "amd64" ]; then \
+    if [ "$TARGETARCH" = "amd64" ]; then \
       GOTASK_URL=$GOTASK_URL_AMD64; \
       GOTASK_SHA256SUM=$GOTASK_SHA256SUM_AMD64; \
-    elif [ "$GOTASK_ARCH" = "arm64" ]; then \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
       GOTASK_URL=$GOTASK_URL_ARM64; \
       GOTASK_SHA256SUM=$GOTASK_SHA256SUM_ARM64; \
     else \
-      echo "Unsupported architecture: $GOTASK_ARCH"; exit 1; \
+      echo "Unsupported architecture: $TARGETARCH"; exit 1; \
     fi \
     && curl -fsSLO "$GOTASK_URL" \
     && echo "${GOTASK_SHA256SUM}  $(basename $GOTASK_URL)" | sha256sum --check \

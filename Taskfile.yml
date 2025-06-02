@@ -56,6 +56,16 @@ tasks:
         local/${IMAGE_NAME}:${IMAGE_TAG} bash \
         -c "cd /build && ./scripts/test.sh"
 
+  run-image:
+    desc: Run docker image
+    cmds:
+      - task: build-image
+      - |
+        set -a; source .env; set +a;
+        docker run --rm -it {{.DOCKER_RUN_ARGS}} \
+        local/${IMAGE_NAME}:${IMAGE_TAG} bash \
+        -c "cd /build && bash"
+
   build-and-test:
     desc: Build and test docker image
     cmds:
