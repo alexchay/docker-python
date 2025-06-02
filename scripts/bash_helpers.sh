@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-DEFAULT_IMAGE_TAG=3.10-slim
+# Determine the image tag based on PYTHON_VERSION
+if [ -n "$PYTHON_VERSION" ]; then
+    DEFAULT_IMAGE_TAG="${PYTHON_VERSION}-slim"
+else
+    DEFAULT_IMAGE_TAG="3.10-slim"
+fi
 
 # Extract ref name from git current branch/tag
 function extract_ref_name {

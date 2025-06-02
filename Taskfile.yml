@@ -1,15 +1,11 @@
 # https://taskfile.dev
 version: "3"
-
+dotenv: ['.env']
+env:
+  # PYTHON_VERSION: "3.10"
 vars:
   PYTHON: python3
   DOCKER_BUILDKIT: 1
-  BASE_IMAGE_NAME: local/python-base
-  BASE_IMAGE_TAG:
-    sh: |
-       echo $(./scripts/bash_helpers.sh get_image_tag)
-  IMAGE_NAME: python
-  IMAGE_TAG: '{{.BASE_IMAGE_TAG}}'
   DOCKER_BUILD_ARGS: >-
     --build-arg HTTP_PROXY --build-arg HTTPS_PROXY --build-arg NO_PROXY
     --build-arg CI_REGISTRY
@@ -24,18 +20,24 @@ includes:
     taskfile: ./taskfiles/b2v.yml
 
 tasks:
-
+  env:
+    desc: Print environment variables
+    cmds:
+      - |
+        set -a; source .env; set +a;
+        env | grep -E '(HOME|PATH|IMAGE|DOCKER|TAG|PYTHON)'
   build-image:
     desc: Build docker image
     cmds:
       - |
-        echo "Build from base image {{.BASE_IMAGE_NAME}}:{{.BASE_IMAGE_TAG}}"
+        set -a; source .env; set +a;
+        echo "Build from base image ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
         export DOCKER_BUILDKIT={{.DOCKER_BUILDKIT}}
         docker buildx build {{.DOCKER_BUILD_ARGS}} \
-        --build-arg BASE_IMAGE_NAME={{.BASE_IMAGE_NAME}} \
-        --build-arg BASE_IMAGE_TAG={{.BASE_IMAGE_TAG}} \
+        --build-arg BASE_IMAGE_NAME \
+        --build-arg BASE_IMAGE_TAG \
         --progress plain \
-        -t local/{{.IMAGE_NAME}}:{{.IMAGE_TAG}} .
+        -t local/${IMAGE_NAME}:${IMAGE_TAG} .
 
   rebuild-image:
     desc: ReBuild docker image
@@ -48,9 +50,10 @@ tasks:
     desc: Test docker image
     cmds:
       - |
+        set -a; source .env; set +a;
         docker run --rm -it {{.DOCKER_RUN_ARGS}} \
-        -e IMAGE_TAGS={{.IMAGE_TAG}} \
-        local/{{.IMAGE_NAME}}:{{.IMAGE_TAG}} bash \
+        -e IMAGE_TAGS=$IMAGE_TAG \
+        local/${IMAGE_NAME}:${IMAGE_TAG} bash \
         -c "cd /build && ./scripts/test.sh"
 
   build-and-test:
@@ -82,27 +85,6 @@ tasks:
     cmds:
       - task: shell-check
       - task: dockerfile-check
-
-  install:
-    desc: Install required dependencies
-    cmds:
-      - uv sync --no-default-groups --no-install-project
-
-  clean:
-    desc: Clean up the installed dependencies
-    cmds:
-      - rm -rf .venv
-
-  reinstall:
-    desc: Clean up and reinstall required dependencies
-    cmds:
-      - task: clean
-      - task: install
-
-  update:
-    desc: Update dependencies
-    cmds:
-      - uv sync
 
   bump-calver:
     desc: Bump Cal version
