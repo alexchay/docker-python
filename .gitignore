@@ -6,7 +6,7 @@
 .DS_Store
 *.retry
 .gitmodules
-
+.vscode
 
 ### Python ###
 ## https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
@@ -50,6 +50,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+test-reports/
 htmlcov/
 .tox/
 .nox/
@@ -112,8 +113,8 @@ ipython_config.py
 #   This is especially recommended for binary packages to ensure reproducibility, and is more
 #   commonly ignored for libraries.
 #   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-poetry.lock
-.python-version
+#poetry.lock
+#.python-version
 
 # pdm
 #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.

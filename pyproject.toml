@@ -1,16 +1,39 @@
 [project]
 name = "docker-python"
 version = "2025.06.02.0"
-description = ""
+description = "This repository contains a Docker image for Python development. It is designed to provide a consistent and reproducible environment for Python applications."
 readme = "README.md"
-authors = ["Alexander Chaykovskiy <alexchay@gmail.com>"]
-license = "MIT"
-repository = "https://github.com/alexchay/docker-python"
-homepage = "https://github.com/alexchay/docker-python"
+authors = [
+    { name = "Alexander Chaykovskiy", email = "<alexchay@gmail.com>" }
+]
+license = { file = "LICENSE" }
+keywords = [
+    "python",
+    "uv"
+]
+
+# Pypi classifiers: https://pypi.org/classifiers/
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 package-mode = false
+packages = []
 requires-python = ">=3.10"
 dependencies = [
 ]
+
+[project.urls]
+repository = "https://github.com/alexchay/docker-python"
+homepage = "https://github.com/alexchay/docker-python"
+
 
 [tool.uv]
 default-groups = []
@@ -18,6 +41,21 @@ default-groups = []
 [dependency-groups]
 dev = [
 ]
+
+test = [
+]
+
+docs = [
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+update_changelog_on_bump = true
+bump_message = "bump: version $current_version → $new_version"
+annotated_tag = false
+
 
 [tool.bumpversion]
 current_version = "2025.06.02.0"
@@ -40,7 +78,7 @@ ignore_missing_version = false
 ignore_missing_files = false
 tag = true
 tag_name = "{new_version}"
-tag_message = "Bump version: {current_version} → {new_version}"
+tag_message = "Version updated from {current_version} to {new_version}"
 sign_tags = false
 allow_dirty = false
 commit = true
@@ -48,8 +86,50 @@ message = "bump: up2date {current_version} → {new_version}"
 moveable_tags = []
 commit_args = ""
 setup_hooks = []
-pre_commit_hooks = []
+pre_commit_hooks = [
+    "uv tool run git-cliff -r . -l --tag $BVHOOK_NEW_VERSION --prepend CHANGELOG.md",
+    "git add CHANGELOG.md",
+]
 post_commit_hooks = []
 
 [tool.bumpversion.parts.release]
 calver_format = "{YYYY}.{0M}.{0D}"
+
+[[tool.bumpversion.files]]
+filename = ".github/.build.env"
+
+[[tool.bumpversion.files]]
+filename = ".github/.matrix.yml"
+
+[[tool.bumpversion.files]]
+filename = ".github/.matrix.yml"
+
+[[tool.bumpversion.files]]
+filename = ".github/.matrix.yml"
+
+[[tool.bumpversion.files]]
+filename = ".github/.matrix.yml"
+
+[[tool.bumpversion.files]]
+filename = ".gitlab/.build.env.yml"
+
+[[tool.bumpversion.files]]
+filename = ".gitlab/.matrix.yml"
+
+[[tool.bumpversion.files]]
+filename = ".gitlab/.matrix.yml"
+
+[[tool.bumpversion.files]]
+filename = ".gitlab/.matrix.yml"
+
+[[tool.bumpversion.files]]
+filename = ".gitlab/.matrix.yml"
+
+[[tool.bumpversion.files]]
+filename = "Dockerfile"
+
+[[tool.bumpversion.files]]
+filename = "Dockerfile"
+search = "created=\\d{{4}}-\\d{{2}}-\\d{{2}}T\\d{{2}}:\\d{{2}}:\\d{{2}}Z"
+replace = "created={utcnow:%Y-%m-%dT%H:%M:%SZ}"
+regex = true
