@@ -1,109 +1,103 @@
 include:
+  - local: "/.gitlab/.build.env.yml"
+  - local: "/.gitlab/matrix.yml"
+  - remote: '$GITLAB_CI_URL/refs/heads/$GITLAB_CI_REF_NAME/ext/.gitlab-ci_.yml'
+    rules:
+      - if: $GITLAB_CI_URL
+  - remote: '$GITLAB_CI_URL/refs/heads/$GITLAB_CI_REF_NAME/ext/.gitlab-ci_py.yml'
+    rules:
+      - if: $GITLAB_CI_URL
+  - remote: '$GITLAB_CI_URL/refs/heads/$GITLAB_CI_REF_NAME/ext/.build_docker_image.yml'
+    rules:
+      - if: $GITLAB_CI_URL
+  - project: '$GITLAB_CI_PATH'
+    ref: '$GITLAB_CI_REF_NAME'
+    file: '/ext/.gitlab-ci_.yml'
+    rules:
+      - if: $GITLAB_CI_PATH
+  - project: '$GITLAB_CI_PATH'
+    ref: '$GITLAB_CI_REF_NAME'
+    file: '/ext/.gitlab-ci_py.yml'
+    rules:
+      - if: $GITLAB_CI_PATH
   - project: '$GITLAB_CI_PATH'
     ref: '$GITLAB_CI_REF_NAME'
     file: '/ext/.build_docker_image.yml'
+    rules:
+      - if: $GITLAB_CI_PATH
 
-variables:
-  PYTHON_VERSION: "3.9"
-  POETRY_VERSION: "1.6.1"
-  GOTASK_VERSION: "3.29.1"
+workflow:
+  rules:
+    - !reference [.workflow_rules, release]
+    - !reference [.workflow_rules, workflow_dispatch]
+    - !reference [.workflow_rules, commit_branches]
+    - !reference [.workflow_rules, schedule]
 
 .rules:
-  build_image_rules:
-    - if: $CI_COMMIT_TAG
-    - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api"
-    - if: $CI_OPTIMIZE_PIPELINE == "true"
-      changes:
-        - Dockerfile
-    - if: $CI_OPTIMIZE_PIPELINE == "false"
-  release_branch_rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api"
-    - if: $CI_OPTIMIZE_PIPELINE == "true"
-      changes:
-        - Dockerfile
-    - if: $CI_OPTIMIZE_PIPELINE == "false"
+  pytesting:
+    - !reference [.optimize_pipeline_rules, if_source_files_changed]
+    - !reference [.optimize_pipeline_rules, otherwise_never]
+    - when: always
+  build_image:
+    - !reference [.workflow_rules, release]
+    - !reference [.workflow_rules, workflow_dispatch]
+    - !reference [.workflow_rules, schedule]
+
+variables:
+  DOCKER_BUILD_ARGS: >-
+    --build-arg BASE_IMAGE_NAME --build-arg BASE_IMAGE_TAG --build-arg PYTHON_VERSION
 
 
-prepare:
+###### VALIDATE ######
+validate_dockerfile:
+  stage: validate
   extends:
-    - .image_gitlab_ci
-    - .prepare_vault
-  stage: .pre
-  script:
-    - echo "Preparing environment for Vault"
+    - .validate_dockerfile
 
-build_image:
+validate_shell:
+  stage: validate
   extends:
-    - .build_image
+    - .validate_shell
+
+static_analysis:
+  extends:
+    - .static_analysis
+    - .parallel_matrix
+  stage: validate
+  rules: !reference [.rules, pytesting]
+
+pytesting:
+  extends:
+    - .pytesting
+    - .parallel_matrix
+  stage: validate
+  rules: !reference [.rules, pytesting]
+
+
+###### BUILD IMAGE ######
+trigger_build_image:
   stage: build
-  needs:
-    - job: prepare
-      artifacts: true
-  script:
-    - >-
-      docker build
-      --build-arg HTTP_PROXY
-      --build-arg HTTPS_PROXY
-      --build-arg NO_PROXY
-      --build-arg CI_REGISTRY=$CI_REGISTRY/$CI_REGISTRY_PATH
-      --cache-from $BRANCH_IMAGE
-      --progress plain -t $BUILD_IMAGE .
-    - docker push $BUILD_IMAGE
-  dependencies:
-    - prepare
-  rules: !reference [.rules, build_image_rules]
-
-test:
-  extends:
-    - .test
-  stage: test
-  script:
-    - pwd
-    - set -e
-    - python --version
-    - |
-      if [ $(python --version | awk 'NR==1{print $2}' | cut -d '.' -f 1,2) != $PYTHON_VERSION ]; then
-          echo Python version does not match $PYTHON_VERSION
-          exit 1
-      fi
-    - poetry --version
-    - |
-      if [ $(poetry --version | sed 's/Poetry (version //;s/)//') != $POETRY_VERSION ]; then
-          echo Poetry version does not match $POETRY_VERSION
-          exit 1
-      fi
-    - task --version
-    - |
-      if [ $(task --version | sed 's/Task version: v//;s/(.*//') != $GOTASK_VERSION ]; then
-          echo Gotask version does not match $GOTASK_VERSION
-          exit 1
-      fi
+  rules: !reference [.rules, build_image]
   variables:
-    GIT_STRATEGY: none
-  rules: !reference [.rules, build_image_rules]
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+  trigger:
+    include:
+      - local: '/.gitlab/workflows/build-image.yml'
+    forward:
+      pipeline_variables: true
+    strategy: depend
+  resource_group: $CI_COMMIT_SHORT_SHA
 
-release_branch:
+
+###### RELEASE ######
+changelog:
+  stage: release
+  extends:
+    - .changelog
+
+release:
+  stage: release
   extends:
     - .release
-  stage: release
-  dependencies:
-    - prepare
-  rules: !reference [.rules, release_branch_rules]
-
-release_tag:
-  extends:
-    - .release_tag
-  dependencies:
-    - prepare
   variables:
-    DELETE_RELEASE: "true"
-
-
-cleanup_build:
-  extends:
-    - .cleanup_build
-  dependencies:
-    - prepare
-  rules: !reference [.rules, build_image_rules]
+    DELETE_EXISTING_RELEASE: "true"
