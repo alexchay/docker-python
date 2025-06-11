@@ -3,10 +3,16 @@ description: Build and push Docker images using a build matrix
 
 on:
   workflow_dispatch:
-  release:
-    types:
-      - published
-
+  push:
+    branches:
+      - main
+    tags:
+      - "*.*.*.*"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 4 * * 1"
 
 concurrency:
   group: "${{ github.repository_id }}"
@@ -29,9 +35,40 @@ jobs:
         run: |
           echo "matrix_json=$(jq -c . < ${{ steps.convert_matrix.outputs.result-path }}/matrix.json)" >> $GITHUB_OUTPUT
 
-  build:
-    name: 'Build ${{ matrix.image_name }}:${{ matrix.image_tags }}'
+  setup_build_env:
+    name: Setup build environment
     needs: prepare-matrix
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+      fail-fast: false
+      # set limit to 2 parallel jobs due to concurency allows only 1 running job and 1 pending job
+      # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
+      max-parallel: 2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup build environment
+        id: setup
+        run: |
+          echo "Setting up build environment..."
+          sed -i 's/^BASE_IMAGE_TAG=.*/BASE_IMAGE_TAG=${{ matrix.BASE_IMAGE_TAG }}/' .github/.build.env
+          sed -i 's/^BUILD_IMAGE_TAGS=.*/BUILD_IMAGE_TAGS=${{ matrix.BUILD_IMAGE_TAGS }}/' .github/.build.env
+
+      - name: Upload .build.env as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: .build.env-${{ matrix.BASE_IMAGE_TAG }}-${{ github.sha }}
+          path: .github/.build.env
+          retention-days: 1
+          overwrite: true
+          include-hidden-files: true
+
+  build:
+    name: 'Build ${{ matrix.BUILD_IMAGE_NAME }}:${{ matrix.BUILD_IMAGE_TAGS }}'
+    needs:
+      - prepare-matrix
+      - setup_build_env
     strategy:
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
       fail-fast: false
@@ -43,8 +80,6 @@ jobs:
       packages: write
     uses: alexchay/github-ci/.github/workflows/build_and_push_image_to_ghcr.yml@main
     with:
-      base_image_name: ${{ matrix.base_image_name }}
-      base_image_tag: ${{ matrix.base_image_tag }}
-      image_name: ${{ matrix.image_name }}
-      image_tags: >-
-        ${{ matrix.image_tags }}${{ github.event_name == 'release' && format(',{0}_{1}', matrix.image_tags, github.ref_name) || '' }}
+      build_env_file: .build.env-${{ matrix.BASE_IMAGE_TAG }}-${{ github.sha }}
+      build_image_name: ${{ matrix.BUILD_IMAGE_NAME }}
+      build_image_tags: ${{ matrix.BUILD_IMAGE_TAGS }}

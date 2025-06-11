@@ -1,15 +1,17 @@
 # a matrix list of variables used in the container build process
 include:
-  - base_image_name: "ghcr.io/alexchay/python-base"
-    base_image_tag: "3.12-slim"
-    image_name: "python"
-    image_tags: "3.12-slim, 3.12"
-  - base_image_name: "ghcr.io/alexchay/python-base"
-    base_image_tag: "3.11-slim"
-    image_name: "python"
-    image_tags: "3.11-slim, 3.11"
-  - base_image_name: "ghcr.io/alexchay/python-base"
-    base_image_tag: "3.10-slim"
-    image_name: "python"
-    image_tags: "3.10-slim, 3.10"
-
+  - PYTHON_VERSION: "3.10"
+    BASE_IMAGE_NAME: ghcr.io/alexchay/python-base
+    BASE_IMAGE_TAG: "3.10-slim"
+    BUILD_IMAGE_NAME: "python"
+    BUILD_IMAGE_TAGS: "3.10-slim,3.10,3.10_2025.06.02.0"
+  - PYTHON_VERSION: "3.11"
+    BASE_IMAGE_NAME: ghcr.io/alexchay/python-base
+    BASE_IMAGE_TAG: "3.11-slim"
+    BUILD_IMAGE_NAME: "python"
+    BUILD_IMAGE_TAGS: "3.11-slim,3.11,3.11_2025.06.02.0"
+  - PYTHON_VERSION: "3.12"
+    BASE_IMAGE_NAME: ghcr.io/alexchay/python-base
+    BASE_IMAGE_TAG: "3.12-slim"
+    BUILD_IMAGE_NAME: "python"
+    BUILD_IMAGE_TAGS: "3.12-slim,3.12,3.12_2025.06.02.0,2025.06.02.0"
