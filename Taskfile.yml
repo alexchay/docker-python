@@ -9,35 +9,86 @@ vars:
   DOCKER_BUILD_ARGS: >-
     --build-arg HTTP_PROXY --build-arg HTTPS_PROXY --build-arg NO_PROXY
     --build-arg CI_REGISTRY
+    --build-arg PYTHON_VERSION
+    --build-arg BASE_IMAGE_NAME --build-arg BASE_IMAGE_TAG
   DOCKER_RUN_ARGS: >-
     -e HTTP_PROXY -e HTTPS_PROXY -e NO_PROXY
-    -v $(pwd)/:/build/
+    -v $(pwd)/:/build/ -w /build/
+
 
 includes:
-  uv:
-    taskfile: ./taskfiles/uv.yml
   b2v:
     taskfile: ./taskfiles/b2v.yml
+  pre-commit:
+    taskfile: ./taskfiles/pre-commit.yml
+  uv:
+    taskfile: ./taskfiles/uv.yml
+
 
 tasks:
   env:
     desc: Print environment variables
     cmds:
       - |
-        set -a; source .env; set +a;
-        env | grep -E '(HOME|PATH|IMAGE|DOCKER|TAG|PYTHON)'
+        env | grep -E '(HOME|PATH|IMAGE|DOCKER|TAG|PYTHON|REGISTRY|URL|CI_)'
+
+  install:
+    desc: Install current and required dependencies
+    cmds:
+      - uv sync --locked --no-default-groups --no-dev --no-editable
+      - task: export
+
+  install-all:
+    desc: Install all dependencies including the current project
+    cmds:
+      - uv sync --all-groups
+
+  export:
+    desc: Export dependencies
+    cmds:
+      - uv export -o requirements.txt --no-install-project --no-default-groups --no-hashes --no-header --no-editable --quiet
+
+  clean:
+    desc: Clean up the installed dependencies
+    cmds:
+      - rm -rf .venv
+
+  reinstall:
+    desc: Clean up and reinstall required dependencies
+    cmds:
+      - task: clean
+      - task: install
+
+  update:
+    desc: Update dependencies
+    cmds:
+      - uv sync --no-install-project --all-groups --upgrade
+
+  shell-check:
+    desc: Run static analysis tool (linter) for shell scripts
+    cmds:
+      - >-
+          docker run --rm -it {{.DOCKER_RUN_ARGS}}
+          koalaman/shellcheck-alpine:latest
+          sh -c "shellcheck --version && echo 'Checking...' && find scripts -name '*.sh' -exec shellcheck {} + && echo 'Done'"
+
+  dockerfile-check:
+    desc: Run static analysis tool (linter) for Dockerfile
+    cmds:
+      - >-
+          docker run --rm -it {{.DOCKER_RUN_ARGS}}
+          hadolint/hadolint:latest-alpine
+          sh -c 'hadolint --version && echo "Checking..." && hadolint Dockerfile && echo "Done"'
+
   build-image:
     desc: Build docker image
     cmds:
       - |
-        set -a; source .env; set +a;
         echo "Build from base image ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
         export DOCKER_BUILDKIT={{.DOCKER_BUILDKIT}}
         docker buildx build {{.DOCKER_BUILD_ARGS}} \
-        --build-arg BASE_IMAGE_NAME \
-        --build-arg BASE_IMAGE_TAG \
         --progress plain \
-        -t local/${IMAGE_NAME}:${IMAGE_TAG} .
+        -t local/${BUILD_IMAGE_NAME}:${BUILD_IMAGE_TAG} .
 
   rebuild-image:
     desc: ReBuild docker image
@@ -50,21 +101,9 @@ tasks:
     desc: Test docker image
     cmds:
       - |
-        set -a; source .env; set +a;
         docker run --rm -it {{.DOCKER_RUN_ARGS}} \
-        -e IMAGE_TAGS=$IMAGE_TAG \
-        local/${IMAGE_NAME}:${IMAGE_TAG} bash \
-        -c "cd /build && ./scripts/test.sh"
-
-  run-image:
-    desc: Run docker image
-    cmds:
-      - task: build-image
-      - |
-        set -a; source .env; set +a;
-        docker run --rm -it {{.DOCKER_RUN_ARGS}} \
-        local/${IMAGE_NAME}:${IMAGE_TAG} bash \
-        -c "cd /build && bash"
+        --entrypoint "./scripts/test-image.sh" \
+        local/${BUILD_IMAGE_NAME}:${BUILD_IMAGE_TAG}
 
   build-and-test:
     desc: Build and test docker image
@@ -72,41 +111,28 @@ tasks:
       - task: build-image
       - task: test-image
 
-  dockerfile-check:
-    desc: Run static analysis tool (linter) for Dockerfile
+  run-image:
+    desc: Run docker image
+    cmds:
+      - task: build-image
+      - |
+        docker run --rm -it {{.DOCKER_RUN_ARGS}} \
+        local/${BUILD_IMAGE_NAME}:${BUILD_IMAGE_TAG} sh
+
+  changelog:
+    desc: Generate changelog
     cmds:
       - >-
-          docker run --rm -it
-          -v $(pwd):/app
-          hadolint/hadolint:latest-alpine
-          sh -c 'hadolint --version && cd app && echo "Checking..." && hadolint Dockerfile && echo "Done"'
+        docker run --rm -it {{.DOCKER_RUN_ARGS}}
+        --entrypoint ""
+        ghcr.io/orhun/git-cliff/git-cliff:latest
+        sh -c "git-cliff --version && git-cliff -r . -o /tmp/CHANGELOG.md && echo 'Changelog generated' && cat /tmp/CHANGELOG.md"
 
-  shell-check:
-    desc: Run static analysis tool (linter) for shell scripts
+  create-gh-release:
+    desc: Create GitHub release
     cmds:
-      - >-
-          docker run --rm -it
-          -v $(pwd):/app
-          koalaman/shellcheck-alpine:latest
-          sh -c 'shellcheck --version && cd app && echo "Checking..." && shellcheck scripts/*.sh && echo "Done"'
+      - gh release create $(uvx bump-my-version show current_version) --generate-notes
 
-  static-analysis:
-    desc: Run code formatter check, linting, static type analysis
-    cmds:
-      - task: shell-check
-      - task: dockerfile-check
 
-  bump-calver:
-    desc: Bump Cal version
-    cmds:
-      - task: bump-calver-patch
 
-  bump-calver-patch:
-    desc: Bump Cal version
-    cmds:
-      - uvx bump-my-version bump --verbose patch
 
-  bump-calver-release:
-    desc: Bump Cal version
-    cmds:
-      - uvx bump-my-version bump --verbose release
