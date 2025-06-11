@@ -29,15 +29,6 @@ The image is tagged with the python backend/version and a matching `python` vers
 
 Images are built for `linux/amd64` and `linux/arm64` architectures.
 
-To build the images locally:
-
-```sh
-git checkout -b 3.10-slim
-task build-image
-```
-
-This will build the image using the appropriate base and tag.
-
 ### Usage
 
 Can be used as a base image for container images with the required python modules/application or as a standalone container for running python application.
