@@ -1,12 +1,39 @@
+ARG PYTHON_VERSION="defval"
 ARG BASE_IMAGE_NAME="defval"
 ARG BASE_IMAGE_TAG="defval"
+
+FROM ghcr.io/astral-sh/uv:python$PYTHON_VERSION-bookworm-slim AS builder
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
+
+WORKDIR /app
+#COPY pyproject.toml uv.lock /app/
+
+RUN \
+    --mount=type=cache,target=root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-default-groups --no-dev --no-editable \
+    && uv tool install go-task-bin
+
+FROM hashicorp/envconsul:latest AS envconsul
+
 FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
-LABEL maintainer="Alexander Chaykovskiy <alexchay@gmail.com>"
+LABEL \
+    org.opencontainers.image.authors="Alexander Chaykovskiy  https://github.com/alexchay" \
+    org.opencontainers.image.created=2025-06-07T14:35:27Z \
+    org.opencontainers.image.url=https://github.com/alexchay/docker-python \
+    org.opencontainers.image.documentation=https://github.com/alexchay/docker-python\
+    org.opencontainers.image.source=https://github.com/alexchay/docker-python \
+    org.opencontainers.image.version=2025.06.02.0 \
+    org.opencontainers.image.licenses=MIT
+
 
 USER root
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-# Install dependencies and GoTask
 # hadolint ignore=SC2086
 RUN \
   --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -20,7 +47,6 @@ RUN \
     sudo \
     time \
     tree \
-    unzip \
     && rm -rf /tmp/* \
     && rm -Rf /usr/share/doc && rm -Rf /usr/share/man
 
@@ -28,13 +54,23 @@ RUN \
 # hadolint ignore=SC2086
 RUN <<EOT
     set -ex
+    mkdir -p /etc/ssh
     chown -R :$GROUPNAME /etc/ssh
     chmod -R g+rwx /etc/ssh
     echo "$USERNAME ALL=(ALL) NOPASSWD: /usr/bin/tee" > /etc/sudoers.d/$USERNAME
 EOT
 
 USER $USERNAME
-WORKDIR $HOME
+WORKDIR $HOME/app
+
+COPY --from=builder --chown=$USER_UID:$USER_GID --chmod=755 /root/.local/bin/task $HOME/.local/bin/task
+COPY --from=envconsul --chown=$USER_UID:$USER_GID --chmod=755 /bin/envconsul $HOME/.local/bin/envconsul
+COPY --from=builder --chown=$USER_UID:$USER_GID /app/.venv $HOME/app/.venv
+
+RUN find "$HOME/app/.venv" -type f -exec sed -i '1s|^#!.*python3$|#!/usr/bin/env python3|' {} +
+
+ENV \
+    PATH=$HOME/app/.venv/bin:$PATH
 
 # default command: display Python version
 CMD [ "python", "--version" ]
