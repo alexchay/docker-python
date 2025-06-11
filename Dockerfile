@@ -18,7 +18,7 @@ RUN \
     uv sync --frozen --no-install-project --no-default-groups --no-dev --no-editable \
     && uv tool install go-task-bin
 
-FROM hashicorp/envconsul:latest AS envconsul
+FROM hashicorp/envconsul AS envconsul
 
 FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 

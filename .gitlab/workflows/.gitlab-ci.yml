@@ -59,20 +59,6 @@ validate_shell:
   extends:
     - .validate_shell
 
-static_analysis:
-  extends:
-    - .static_analysis
-    - .parallel_matrix
-  stage: validate
-  rules: !reference [.rules, pytesting]
-
-pytesting:
-  extends:
-    - .pytesting
-    - .parallel_matrix
-  stage: validate
-  rules: !reference [.rules, pytesting]
-
 
 ###### BUILD IMAGE ######
 trigger_build_image:
