@@ -34,13 +34,13 @@ workflow:
     - !reference [.workflow_rules, schedule]
 
 .rules:
-  pytesting:
-    - !reference [.optimize_pipeline_rules, if_source_files_changed]
-    - !reference [.optimize_pipeline_rules, otherwise_never]
-    - when: always
   build_image:
-    - !reference [.workflow_rules, release]
+    - if: $CI_MATRIX_BUILD=="true"
+      when: never
     - !reference [.workflow_rules, workflow_dispatch]
+  build_matrix:
+    - if: $CI_MATRIX_BUILD=="true" && ($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api")
+    - !reference [.workflow_rules, release]
     - !reference [.workflow_rules, schedule]
 
 variables:
@@ -74,6 +74,22 @@ trigger_build_image:
     strategy: depend
   resource_group: $CI_COMMIT_SHORT_SHA
 
+###### BUILD MATRIX ######
+trigger_build_matrix:
+  stage: build
+  rules: !reference [.rules, build_matrix]
+  needs:
+    - validate_dockerfile
+    - validate_shell
+  extends:
+    - .parallel_matrix
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+  trigger:
+    include:
+      - local: '/.gitlab/workflows/build-image.yml'
+    strategy: depend
+  resource_group: $CI_COMMIT_SHORT_SHA
 
 ###### RELEASE ######
 changelog:

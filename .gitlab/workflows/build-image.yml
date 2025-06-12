@@ -27,7 +27,7 @@ build_image:
   extends:
     - .build_image
   variables:
-    CACHE_IMAGE: $CI_REGISTRY/$CI_REGISTRY_PATH/$BUILD_IMAGE_NAME:buildcache
+    CACHE_IMAGE: $CI_REGISTRY/$CI_REGISTRY_PATH/$BUILD_IMAGE_NAME:buildcache_$BUILD_IMAGE_TAG
 
 test_image:
   stage: test
@@ -38,9 +38,7 @@ test_image:
       artifacts: false
   script:
     - pwd
-    - ./scripts/test.sh
-  variables:
-    IMAGE_TAGS: $BUILD_IMAGE_TAG
+    - ./scripts/test-image.sh
 
 
 tag_image:
