@@ -87,7 +87,9 @@ moveable_tags = []
 commit_args = ""
 setup_hooks = []
 pre_commit_hooks = [
-    "uv tool run git-cliff -r . -l --tag $BVHOOK_NEW_VERSION --prepend CHANGELOG.md",
+    "uv lock",
+    "git add uv.lock",
+    "uv tool run git-cliff -r . -u --tag $BVHOOK_NEW_VERSION --prepend CHANGELOG.md",
     "git add CHANGELOG.md",
 ]
 post_commit_hooks = []
@@ -99,31 +101,13 @@ calver_format = "{YYYY}.{0M}.{0D}"
 filename = ".github/.build.env"
 
 [[tool.bumpversion.files]]
-filename = ".github/.matrix.yml"
-
-[[tool.bumpversion.files]]
-filename = ".github/.matrix.yml"
-
-[[tool.bumpversion.files]]
-filename = ".github/.matrix.yml"
-
-[[tool.bumpversion.files]]
-filename = ".github/.matrix.yml"
+filename = ".github/matrix.yml"
 
 [[tool.bumpversion.files]]
 filename = ".gitlab/.build.env.yml"
 
 [[tool.bumpversion.files]]
-filename = ".gitlab/.matrix.yml"
-
-[[tool.bumpversion.files]]
-filename = ".gitlab/.matrix.yml"
-
-[[tool.bumpversion.files]]
-filename = ".gitlab/.matrix.yml"
-
-[[tool.bumpversion.files]]
-filename = ".gitlab/.matrix.yml"
+filename = ".gitlab/matrix.yml"
 
 [[tool.bumpversion.files]]
 filename = "Dockerfile"
