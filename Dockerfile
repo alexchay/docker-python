@@ -22,7 +22,7 @@ RUN \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-default-groups --no-dev --no-editable
 
-FROM hashicorp/envconsul AS envconsul
+FROM hashicorp/envconsul:0.13 AS envconsul
 
 FROM ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
