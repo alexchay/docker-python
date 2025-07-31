@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2025.07.31.0
+
+[a10b3d8](a10b3d8a4f4c226b5835c8742addd8e23003b888)...[607c6e2](607c6e2cfadadb2a920a8acdd3640bb98452094a)
+
+### Bug Fixes
+
+* [9024b11](9024b110e3f5964d81fe308e2baeeae3d82f5b99): Add  UV_NO_MANAGED_PYTHON=1 in Dockerfile 
+* [c541feb](c541feba258d1f780a1dba7a015a771fe1d12855): Pin uv version to 0.7 
+* [607c6e2](607c6e2cfadadb2a920a8acdd3640bb98452094a): Update UV version from 0.7 to 0.8 in Dockerfile 
+
+### Miscellaneous Tasks
+
+* [ac89f6d](ac89f6de80d8cd7675df0fd31f0201471b1c47a3): Update Python version to 3.12 in .env and .python-version files 
+
+### Refactor
+
+* [ef09103](ef091030f5034c922d94caf23fcf97f89ab4d5b3): Rename task sections for clarity and add list-installed-python task 
+
 ## 2025.06.13.0
 
 [917d3ea](917d3ea97f768e6784dadfd96d868baa507ac30e)...[591c248](591c24878b874689f5ccefc80953d810f5ecdb5f)
