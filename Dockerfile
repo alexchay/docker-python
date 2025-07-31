@@ -2,7 +2,7 @@ ARG PYTHON_VERSION="defval"
 ARG BASE_IMAGE_NAME="defval"
 ARG BASE_IMAGE_TAG="defval"
 
-FROM ghcr.io/astral-sh/uv:0.7-python$PYTHON_VERSION-bookworm-slim AS builder
+FROM ghcr.io/astral-sh/uv:0.8-python$PYTHON_VERSION-bookworm-slim AS builder
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -16,7 +16,8 @@ WORKDIR /app
 ENV PYTHONMALLOC=malloc
 RUN \
     --mount=type=cache,target=root/.cache/uv \
-    uv tool install go-task-bin
+    export UV_TOOL_BIN_DIR="$HOME/.local/bin" \
+    && uv tool install go-task-bin
 
 RUN \
     --mount=type=cache,target=root/.cache/uv \
